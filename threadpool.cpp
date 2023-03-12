@@ -1,20 +1,70 @@
-﻿// threadpool.cpp : 此文件包含 "main" 函数。程序执行将在此处开始并结束。
-//
+﻿#include "threadpool.h"
+#include <functional>
+const int TASK_MAX_THREASHHOLD = 1024;
 
-#include <iostream>
-
-int main()
+ThreadPool::ThreadPool() 
+	:initThreadSize_(4)
+	,taskSize_(0)
+	,taskQusMaxThreshHold_(TASK_MAX_THREASHHOLD)
+	,poolMode_(PoolMode::MODE_FIXED)
 {
-    std::cout << "Hello World!\n";
+
+}
+//线程池析构
+ThreadPool::~ThreadPool()
+{
+
+}
+//设置线程池的工作模式
+void ThreadPool::setMode(PoolMode mode)
+{
+	poolMode_ = mode;
+}
+//设置初始的线程数量
+void ThreadPool::setInitThreadSize(int size)
+{
+	initThreadSize_ = size;
+}
+//设置task任务队列上限阈值
+void ThreadPool::setTaskQueMaxThreshHold(int threshhold)
+{
+	taskQusMaxThreshHold_ = threshhold;
+}
+//给线程池提交任务
+void ThreadPool::submitTask(std::shared_ptr<Task> sp)
+{
+
+}
+//开启线程池//在声明处设置默认就行这里可以不写
+void ThreadPool::start(int initThreadSize)
+{
+	//记录初始线程个数
+	initThreadSize_ = initThreadSize;
+
+	//创建线程对象
+	for (int i = 0; i < initThreadSize_; i++) 
+	{ 
+		//创建thread线程对象的时候，把线程函数给到thread线程对象
+		threads_.emplace_back(new Thread(std::bind(&ThreadPool::threadFunc,this)));
+	}
+
+	//启动所有线程
+	for (int i = 0; i < initThreadSize_; i++) 
+	{
+		threads_[i]->start();
+	}
 }
 
-// 运行程序: Ctrl + F5 或调试 >“开始执行(不调试)”菜单
-// 调试程序: F5 或调试 >“开始调试”菜单
+//定义线程函数
 
-// 入门使用技巧: 
-//   1. 使用解决方案资源管理器窗口添加/管理文件
-//   2. 使用团队资源管理器窗口连接到源代码管理
-//   3. 使用输出窗口查看生成输出和其他消息
-//   4. 使用错误列表窗口查看错误
-//   5. 转到“项目”>“添加新项”以创建新的代码文件，或转到“项目”>“添加现有项”以将现有代码文件添加到项目
-//   6. 将来，若要再次打开此项目，请转到“文件”>“打开”>“项目”并选择 .sln 文件
+void ThreadPool::threadFunc()
+{
+
+}
+
+/////线程方法实现
+//启动线程
+void Thread::start()
+{
+
+}
