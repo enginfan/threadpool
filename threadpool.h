@@ -27,9 +27,12 @@ enum class PoolMode {
 //线程类型
 class Thread {
 public:
-	using ThreadFunc = std::function<void>;
+	//线程函数对象类型
+	using ThreadFunc = std::function<void()>;
 	//线程构造
+	Thread(ThreadFunc func);
 	//线程析构
+	~Thread();
 	//启动线程
 	void start();
 private:
@@ -61,7 +64,7 @@ private:
 	void threadFunc();
 private:
 	//线程列表
-	std::vector<Thread*> threads_;
+	std::vector<std::unique_ptr<Thread>> threads_;
 	//初始的线程数量
 	size_t initThreadSize_;
 	//任务队列

@@ -1,10 +1,12 @@
-
-
+#include "threadpool.h"
 #include <iostream>
-
+#include <chrono>
 int main()
 {
-    std::cout << "Hello World!\n";
+    ThreadPool pool;
+    pool.start();
+    std::this_thread::sleep_for(std::chrono::seconds(5));
+    return 0;
 }
 
 // 运行程序: Ctrl + F5 或调试 >“开始执行(不调试)”菜单
