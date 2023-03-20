@@ -1,11 +1,31 @@
 #include "threadpool.h"
 #include <iostream>
 #include <chrono>
+
+
+
+class MyTask :public Task
+{
+public:
+    Any run() 
+    {
+        std::cout << "tid:" << std::this_thread::get_id()
+            <<"begin!" << std::endl;
+        std::this_thread::sleep_for(std::chrono::seconds(2));
+        std::cout << "tid:" << std::this_thread::get_id()
+            <<"end!" << std::endl;
+    }
+private:
+  
+};
+
+        
+
 int main()
 {
     ThreadPool pool;
-    pool.start();
-    std::this_thread::sleep_for(std::chrono::seconds(5));
+    pool.start(4);
+    
     return 0;
 }
 
