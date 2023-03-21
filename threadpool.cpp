@@ -4,11 +4,14 @@
 #include <iostream>
 const int TASK_MAX_THREASHHOLD = 1024;
 
+///////////////////////////////////////////////////////////线程池方法
 ThreadPool::ThreadPool()
 	:initThreadSize_(4)
 	, taskSize_(0)
+	, idleThreadSize_(0)
 	, taskQusMaxThreshHold_(TASK_MAX_THREASHHOLD)
 	, poolMode_(PoolMode::MODE_FIXED)
+	, isPoolRunning_(false)
 {
 
 }
@@ -20,16 +23,23 @@ ThreadPool::~ThreadPool()
 //设置线程池的工作模式
 void ThreadPool::setMode(PoolMode mode)
 {
+	//不允许在启动以后再设置
+	if (checkRunningState())
+		return;
 	poolMode_ = mode;
 }
 //设置初始的线程数量
 void ThreadPool::setInitThreadSize(int size)
 {
+	if (checkRunningState())
+		return;
 	initThreadSize_ = size;
 }
 //设置task任务队列上限阈值
 void ThreadPool::setTaskQueMaxThreshHold(int threshhold)
 {
+	if (checkRunningState())
+		return;
 	taskQusMaxThreshHold_ = threshhold;
 }
 //给线程池提交任务 用户调用该接口 传入任务对象 生产任务
@@ -54,13 +64,21 @@ Result ThreadPool::submitTask(std::shared_ptr<Task> sp)
 	taskSize_++;
 	//因为新放了任务，任务队列肯定不空了，在notEmpty_上进行通知,赶快分配线程执行任务
 	notEmpty_.notify_all();
+
+	//cached模式 任务处理比较紧急 场景：小而且快的任务 需要根据任务的数量和空闲线程的数量，判断是否需要创建新的线程出来
+
+
+
 	//返回任务的result对象
 	return Result(sp);
 
 }
-//开启线程池//在声明处设置默认就行这里可以不写
+
+//开启线程池
 void ThreadPool::start(int initThreadSize)
 {
+	//设置线程池的运行状态
+	isPoolRunning_ = true;
 	//记录初始线程个数
 	initThreadSize_ = initThreadSize;
 
@@ -76,11 +94,12 @@ void ThreadPool::start(int initThreadSize)
 	for (size_t i = 0; i < initThreadSize_; i++)
 	{
 		threads_[i]->start();
+		//记录初始空闲线程的数量 因为刚开始启动全都应该是空闲的
+		idleThreadSize_++;
 	}
 }
 
 //定义线程函数
-
 void ThreadPool::threadFunc()
 {
 	/*std::cout << "begin threadfunc:" << std::this_thread::get_id()
@@ -97,6 +116,8 @@ void ThreadPool::threadFunc()
 				<< "尝试获取任务..." << std::endl;
 			//等待notEmpty条件
 			notEmpty_.wait(lock, [&]()->bool {return taskQue_.size() > 0; });
+			idleThreadSize_--;
+
 			std::cout << "tid:" << std::this_thread::get_id()
 				<< "获取任务成功..." << std::endl;
 			//从任务队列中取一个任务出来
@@ -117,10 +138,16 @@ void ThreadPool::threadFunc()
 			task->exec();
 			//执行完成
 		}
+		idleThreadSize_++;
 	}
 }
 
-/////线程方法实现
+bool ThreadPool::checkRunningState()const
+{
+	return isPoolRunning_;
+}
+
+/////////////////////////////////////////////////////////线程方法实现
 
 //线程构造
 Thread::Thread(ThreadFunc func)
@@ -142,7 +169,10 @@ void Thread::start()
 
 }
 
-//////////////// Task方法实现
+///////////////////////////////////////////////////////// Task方法实现
+Task::Task()
+	: result_(nullptr)
+{}
 void Task::exec()
 {
 	if (result_ != nullptr) 
@@ -158,19 +188,13 @@ void Task::setResult(Result *res)
 	result_ = res;
 }
 
-///////////////Result方法实现
+//////////////////////////////////////////////////////////Result方法实现
 //isvlid不能加=true会报错
 Result::Result(std::shared_ptr<Task> task, bool isValid) 
 	: task_(task)
 	, isValid_(isValid)
 {
-
-}
-
-Result::Result(const Result& res)
-{
-	this->task_ = res.task_;
-	this->isValid_ = (bool)res.isValid_;
+	task_->setResult(this);
 }
 
 Any Result::get()

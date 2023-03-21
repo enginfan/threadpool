@@ -118,7 +118,6 @@ class Result
 {
 public:
 	Result(std::shared_ptr<Task> task, bool isValid = true);
-	Result(const Result& res);
 	~Result() = default;
 
 	//获取任务执行完的返回值
@@ -139,6 +138,8 @@ private:
 //任务抽象基类
 class Task {
 public:
+	Task();
+	~Task() = default;
 	void exec();
 	void setResult(Result* res);
 	//用户可以自定义任意任务，从Task继承，重写run方法，实现自定义任务处理
@@ -195,6 +196,8 @@ public:
 private:
 	//定义线程函数
 	void threadFunc();
+	//检查pool的运行状态
+	bool checkRunningState() const;
 private:
 	//线程列表
 	std::vector<std::unique_ptr<Thread>> threads_;
@@ -214,6 +217,10 @@ private:
 	std::condition_variable notEmpty_;
 	//当前线程池的工作模式
 	PoolMode poolMode_;
+	//当前线程池的启动状态
+	std::atomic_bool isPoolRunning_;
+	//记录空闲线程的数量
+	std::atomic_int idleThreadSize_;
 };
 
 
