@@ -194,8 +194,8 @@ public:
 	void setThreadThreshHold(int threshhold);
 	//给线程池提交任务
 	Result submitTask(std::shared_ptr<Task> sp);
-	//开启线程池
-	void start(int initThreadSize = 4);
+	//开启线程池::等于CPU核心数
+	void start(int initThreadSize = std::thread::hardware_concurrency());
 
 	//禁止进行拷贝构造
 	ThreadPool(const ThreadPool&) = delete;
@@ -234,6 +234,8 @@ private:
 	std::condition_variable notFull_;
 	//表示任务队列的不空
 	std::condition_variable notEmpty_;
+	//等待线程资源全部回收
+	std::condition_variable exitCond_;
 
 	//当前线程池的工作模式
 	PoolMode poolMode_;
