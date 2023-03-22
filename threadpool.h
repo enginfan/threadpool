@@ -8,6 +8,7 @@
 #include <mutex>
 #include <condition_variable>
 #include <functional>
+#include <unordered_map>
 
 /*
 example:
@@ -162,15 +163,20 @@ enum class PoolMode {
 class Thread {
 public:
 	//线程函数对象类型
-	using ThreadFunc = std::function<void()>;
+	using ThreadFunc = std::function<void(int)>;
 	//线程构造
 	Thread(ThreadFunc func);
 	//线程析构
 	~Thread();
 	//启动线程
 	void start();
+
+	//获取线程id 写到CPP中编译为动态库就不可见
+	int getId()const;
 private:
 	ThreadFunc func_;
+	static int generatedId_;
+	int threadId_;
 };
 
 //线程池类型
@@ -184,6 +190,8 @@ public:
 	void setMode(PoolMode mode);
 	//设置task任务队列上限阈值
 	void setTaskQueMaxThreshHold(int threshhold);
+	//设置线程池cached模式下线程阈值
+	void setThreadThreshHold(int threshhold);
 	//给线程池提交任务
 	Result submitTask(std::shared_ptr<Task> sp);
 	//开启线程池
@@ -195,32 +203,43 @@ public:
 
 private:
 	//定义线程函数
-	void threadFunc();
+	void threadFunc(int threadId);
 	//检查pool的运行状态
 	bool checkRunningState() const;
 private:
-	//线程列表
-	std::vector<std::unique_ptr<Thread>> threads_;
+	//线程列表 因为vector本身不是线程安全的所以不适合使用
+	//vec容器本身的size来表示线程池线程的数量
+	//std::vector<std::unique_ptr<Thread>> threads_;
+	std::unordered_map<int, std::unique_ptr<Thread>> threads_;
+
 	//初始的线程数量
-	size_t initThreadSize_;
+	int initThreadSize_;
+	//当前线程池里的线程的总数量
+	std::atomic_int curThreadSize_;
+	//线程数量上限阈值
+	int threadSizeThreshHold_;
+	//记录空闲线程的数量
+	std::atomic_int idleThreadSize_;
+
 	//任务队列
 	std::queue<std::shared_ptr<Task>>  taskQue_;
 	//任务的数量
-	std::atomic_uint taskSize_;
+	std::atomic_int taskSize_;
 	// 任务队列数量上限阈值
 	int taskQusMaxThreshHold_;
+
 	//保证任务队列线程安全
 	std::mutex taskQueMtx_;
 	//表示任务队列的不满
 	std::condition_variable notFull_;
 	//表示任务队列的不空
 	std::condition_variable notEmpty_;
+
 	//当前线程池的工作模式
 	PoolMode poolMode_;
 	//当前线程池的启动状态
 	std::atomic_bool isPoolRunning_;
-	//记录空闲线程的数量
-	std::atomic_int idleThreadSize_;
+	
 };
 
 
