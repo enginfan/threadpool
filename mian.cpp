@@ -33,12 +33,16 @@ private:
 
 int main()
 {
-  ThreadPool pool;
-  pool.start();
-  for(int i=0;i<15;i++)
   {
-    //std::cout << i << ",";
-    pool.submitTask(std::make_shared<MyTask>(1, 100000000));
+    ThreadPool pool;
+    pool.setMode(PoolMode::MODE_CACHED);
+    pool.start(4);
+    for (int i = 0; i < 100; i++)
+    {
+      pool.submitTask(std::make_shared<MyTask>(1, 100000000));
+    }
+    
+
   }
     
 

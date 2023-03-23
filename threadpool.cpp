@@ -137,7 +137,7 @@ void ThreadPool::threadFunc(int threadId)
 		<< std::endl;
 	std::cout << "end threadfunc:" << std::this_thread::get_id()
 		<< std::endl;*/
-	while(isPoolRunning_)
+	for(;;)
 	{
 		auto lastTime = std::chrono::high_resolution_clock().now();
 
@@ -150,8 +150,16 @@ void ThreadPool::threadFunc(int threadId)
 			//在cached的模式下，有可能已经创建了很多线程，但是空闲时间超过60s
 			//应把多余的线程回收掉
 			//每一秒钟返回一次
-			while (isPoolRunning_&&taskQue_.size() == 0)
+			while (taskQue_.size() == 0)
 			{
+				if (!isPoolRunning_)
+				{
+					std::cout << "threadid:" << std::this_thread::get_id() << "exit!"
+						<< std::endl;
+					threads_.erase(threadId);
+					exitCond_.notify_all();
+					return;
+				}
 				if (PoolMode::MODE_CACHED == poolMode_)
 				{
 					if (std::cv_status::timeout ==
@@ -192,10 +200,10 @@ void ThreadPool::threadFunc(int threadId)
 
 			}
 			//回收资源
-			if (!isPoolRunning_)
+			/*if (!isPoolRunning_)
 			{
 				break;
-			}
+			}*/
 			//从任务队列中取一个任务出来
 			task = taskQue_.front();
 			taskQue_.pop();
@@ -221,10 +229,6 @@ void ThreadPool::threadFunc(int threadId)
 		lastTime = std::chrono::high_resolution_clock().now();
 		idleThreadSize_++;
 	}
-	std::cout << "threadid:" << std::this_thread::get_id() << "exit!"
-		<< std::endl;
-	threads_.erase(threadId);
-	exitCond_.notify_all();
 }
 
 bool ThreadPool::checkRunningState()const
