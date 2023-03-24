@@ -237,7 +237,7 @@ bool ThreadPool::checkRunningState()const
 }
 
 /////////////////////////////////////////////////////////线程Thread方法实现
-int Thread::generatedId_ = 0;
+//int Thread::generatedId_ = 0;
 
 //线程构造
 Thread::Thread(ThreadFunc func)

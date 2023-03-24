@@ -140,10 +140,11 @@
     </Link>
   </ItemDefinitionGroup>
   <ItemGroup>
-    <ClCompile Include="mian.cpp" />
+    <ClCompile Include="newMain.cpp" />
     <ClCompile Include="threadpool.cpp" />
   </ItemGroup>
   <ItemGroup>
+    <ClInclude Include="newThreadPool.h" />
     <ClInclude Include="threadpool.h" />
   </ItemGroup>
   <Import Project="$(VCTargetsPath)\Microsoft.Cpp.targets" />
